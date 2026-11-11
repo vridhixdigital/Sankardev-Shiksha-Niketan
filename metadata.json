@@ -1,0 +1,6 @@
+{
+  "name": "Sankardev Shiksha Niketan - Gohpur | School Portal & ERP",
+  "description": "Official public portal and full-stack School ERP for Sankardev Shiksha Niketan, Gohpur (SSN Gohpur), featuring role-based dashboards, automated grade tracking, student skill development, and real-time biometric attendance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

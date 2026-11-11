@@ -1,0 +1,906 @@
+{
+  "entities": {
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Super Admin privilege registry document keyed by user UID.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the administrator.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified email address of the administrator.",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "grantedBy": {
+          "type": "string",
+          "description": "UID of the Super Admin who granted access.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of admin creation."
+        }
+      },
+      "required": ["uid", "email", "grantedBy", "createdAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "School ERP user record for Students, Parents, Teachers, and Super Admins containing isolated PII.",
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string",
+          "description": "Full legal name of the user.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the user.",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number.",
+          "minLength": 5,
+          "maxLength": 24
+        },
+        "role": {
+          "type": "string",
+          "description": "Assigned ERP role.",
+          "enum": ["super_admin", "teacher", "student", "parent"],
+          "minLength": 5,
+          "maxLength": 20
+        },
+        "departmentOrClass": {
+          "type": "string",
+          "description": "Assigned class (e.g. Class X, Class XII Science, B.A. English) or department.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "rollOrEmpNo": {
+          "type": "string",
+          "description": "Student Roll ID or Staff Employee ID.",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "guardianOrLinkedName": {
+          "type": "string",
+          "description": "Parent/Guardian name for students or linked ward name for parents.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "address": {
+          "type": "string",
+          "description": "Residential address in Gohpur / Biswanath.",
+          "minLength": 2,
+          "maxLength": 200
+        },
+        "status": {
+          "type": "string",
+          "description": "Account lifecycle status.",
+          "enum": ["active", "suspended", "archived"],
+          "minLength": 6,
+          "maxLength": 16
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "UID of the user or Super Admin owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp."
+        }
+      },
+      "required": [
+        "fullName",
+        "email",
+        "phone",
+        "role",
+        "departmentOrClass",
+        "rollOrEmpNo",
+        "guardianOrLinkedName",
+        "address",
+        "status",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "GradeRecord": {
+      "title": "GradeRecord",
+      "description": "Automated grade tracking record with calculated GPA, percentage, letter grade, and division.",
+      "type": "object",
+      "properties": {
+        "studentId": {
+          "type": "string",
+          "description": "Student Roll/ERP ID.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "studentName": {
+          "type": "string",
+          "description": "Full name of the student.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "className": {
+          "type": "string",
+          "description": "Class and stream (e.g. Class X, Class XII Science).",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "examTerm": {
+          "type": "string",
+          "description": "Examination term name.",
+          "enum": ["Unit Test I", "Half Yearly", "Unit Test II", "Annual Final", "ASSEB Mock Board"],
+          "minLength": 5,
+          "maxLength": 40
+        },
+        "subject": {
+          "type": "string",
+          "description": "Academic subject name.",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "marksObtained": {
+          "type": "number",
+          "description": "Numeric marks scored."
+        },
+        "maxMarks": {
+          "type": "number",
+          "description": "Maximum possible marks."
+        },
+        "percentage": {
+          "type": "number",
+          "description": "Automated percentage score (0-100)."
+        },
+        "letterGrade": {
+          "type": "string",
+          "description": "Automated letter grade.",
+          "enum": ["A+", "A", "B+", "B", "C", "D", "F"],
+          "minLength": 1,
+          "maxLength": 4
+        },
+        "gpa": {
+          "type": "number",
+          "description": "Automated GPA on 10-point scale."
+        },
+        "division": {
+          "type": "string",
+          "description": "Automated board division classification.",
+          "enum": ["Distinction (Star)", "First Division", "Second Division", "Third Division", "Needs Improvement"],
+          "minLength": 4,
+          "maxLength": 30
+        },
+        "remarks": {
+          "type": "string",
+          "description": "Evaluator academic feedback.",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "status": {
+          "type": "string",
+          "description": "Grade publication status (locked when finalized).",
+          "enum": ["published", "finalized"],
+          "minLength": 9,
+          "maxLength": 12
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "Student or creator UID for access evaluation.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "teacherUid": {
+          "type": "string",
+          "description": "Evaluator teacher UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "studentId",
+        "studentName",
+        "className",
+        "examTerm",
+        "subject",
+        "marksObtained",
+        "maxMarks",
+        "percentage",
+        "letterGrade",
+        "gpa",
+        "division",
+        "remarks",
+        "status",
+        "ownerUid",
+        "teacherUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SkillMilestone": {
+      "title": "SkillMilestone",
+      "description": "Smart student skill development tracker with proficiency, XP, and milestone progression.",
+      "type": "object",
+      "properties": {
+        "studentId": {
+          "type": "string",
+          "description": "Student Roll/ERP ID.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "studentName": {
+          "type": "string",
+          "description": "Student full name.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "className": {
+          "type": "string",
+          "description": "Class or degree cohort.",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "skillDomain": {
+          "type": "string",
+          "description": "Holistic skill domain.",
+          "enum": [
+            "STEM & Scientific Inquiry",
+            "Literary & Communication Arts",
+            "APSC / UPSC Competitive Readiness",
+            "Digital & Computational Thinking",
+            "Sankariya Cultural & Moral Leadership",
+            "Sports & Athletic Endurance"
+          ],
+          "minLength": 5,
+          "maxLength": 60
+        },
+        "skillTitle": {
+          "type": "string",
+          "description": "Specific competency or project milestone title.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "proficiency": {
+          "type": "number",
+          "description": "Current mastery percentage (0 to 100)."
+        },
+        "xpPoints": {
+          "type": "number",
+          "description": "Accumulated skill experience points."
+        },
+        "milestoneCurrent": {
+          "type": "string",
+          "description": "Current completed milestone stage.",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "milestoneTarget": {
+          "type": "string",
+          "description": "Next target milestone stage.",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "status": {
+          "type": "string",
+          "description": "Milestone progression state.",
+          "enum": ["in_progress", "verified", "mastered"],
+          "minLength": 8,
+          "maxLength": 16
+        },
+        "endorsementNote": {
+          "type": "string",
+          "description": "Faculty mentor endorsement note.",
+          "minLength": 2,
+          "maxLength": 240
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "Student or creator UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "teacherUid": {
+          "type": "string",
+          "description": "Mentor teacher UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "studentId",
+        "studentName",
+        "className",
+        "skillDomain",
+        "skillTitle",
+        "proficiency",
+        "xpPoints",
+        "milestoneCurrent",
+        "milestoneTarget",
+        "status",
+        "endorsementNote",
+        "ownerUid",
+        "teacherUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BiometricAttendance": {
+      "title": "BiometricAttendance",
+      "description": "Real-time biometric attendance log for teachers and staff.",
+      "type": "object",
+      "properties": {
+        "staffId": {
+          "type": "string",
+          "description": "Employee ID of the teacher or staff member.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "staffName": {
+          "type": "string",
+          "description": "Full name of the faculty or staff member.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "designation": {
+          "type": "string",
+          "description": "Academic or administrative role.",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "department": {
+          "type": "string",
+          "description": "Academic department.",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "deviceId": {
+          "type": "string",
+          "description": "Biometric terminal identifier.",
+          "minLength": 3,
+          "maxLength": 40,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "verificationMethod": {
+          "type": "string",
+          "description": "Biometric verification modality.",
+          "enum": ["Optical Fingerprint", "WebAuthn Passkey", "Facial Recognition"],
+          "minLength": 5,
+          "maxLength": 30
+        },
+        "confidenceScore": {
+          "type": "number",
+          "description": "Biometric match score percentage (90-100)."
+        },
+        "punchType": {
+          "type": "string",
+          "description": "Check-in or Check-out direction.",
+          "enum": ["CHECK_IN", "CHECK_OUT"],
+          "minLength": 8,
+          "maxLength": 12
+        },
+        "attendanceStatus": {
+          "type": "string",
+          "description": "Shift compliance status.",
+          "enum": ["On Time", "Late Arrival", "Checked Out", "Verified"],
+          "minLength": 6,
+          "maxLength": 20
+        },
+        "dateStr": {
+          "type": "string",
+          "description": "ISO date string YYYY-MM-DD.",
+          "minLength": 8,
+          "maxLength": 16
+        },
+        "punchTimeLabel": {
+          "type": "string",
+          "description": "Formatted local punch time.",
+          "minLength": 4,
+          "maxLength": 24
+        },
+        "biometricHash": {
+          "type": "string",
+          "description": "Cryptographic template verification digest.",
+          "minLength": 8,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "UID of the staff member or administrator who logged the punch.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "staffId",
+        "staffName",
+        "designation",
+        "department",
+        "deviceId",
+        "verificationMethod",
+        "confidenceScore",
+        "punchType",
+        "attendanceStatus",
+        "dateStr",
+        "punchTimeLabel",
+        "biometricHash",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "NotificationItem": {
+      "title": "NotificationItem",
+      "description": "Real-time notification broadcast and targeted alert item.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Notification headline.",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "message": {
+          "type": "string",
+          "description": "Notification body content.",
+          "minLength": 2,
+          "maxLength": 500
+        },
+        "category": {
+          "type": "string",
+          "description": "Notification domain type.",
+          "enum": ["Academic", "Biometric", "Gradebook", "Admission", "Emergency", "Skill Milestone"],
+          "minLength": 4,
+          "maxLength": 24
+        },
+        "priority": {
+          "type": "string",
+          "description": "Urgency level.",
+          "enum": ["normal", "high", "urgent"],
+          "minLength": 4,
+          "maxLength": 12
+        },
+        "targetRole": {
+          "type": "string",
+          "description": "Target audience role.",
+          "enum": ["all", "student", "parent", "teacher", "super_admin"],
+          "minLength": 3,
+          "maxLength": 20
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Display name of sender.",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Whether recipient marked notification as read."
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "Creator or recipient UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "title",
+        "message",
+        "category",
+        "priority",
+        "targetRole",
+        "senderName",
+        "isRead",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdmissionRecord": {
+      "title": "AdmissionRecord",
+      "description": "Online admission application and fee verification record for Session 2026-27.",
+      "type": "object",
+      "properties": {
+        "applicationNo": {
+          "type": "string",
+          "description": "Unique barcode application ID (e.g. SSN-2026-1042).",
+          "minLength": 4,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "applicantName": {
+          "type": "string",
+          "description": "Full name of applicant student.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "applyingForClass": {
+          "type": "string",
+          "description": "Target admission class or B.A. degree program.",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "stream": {
+          "type": "string",
+          "description": "Academic stream (General, Science, Arts, Commerce, B.A. Honours).",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "guardianName": {
+          "type": "string",
+          "description": "Parent or guardian full name.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "contactPhone": {
+          "type": "string",
+          "description": "Applicant contact number.",
+          "minLength": 5,
+          "maxLength": 24
+        },
+        "contactEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Applicant email address.",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "previousSchool": {
+          "type": "string",
+          "description": "Last attended school or board.",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "percentageLastExam": {
+          "type": "number",
+          "description": "Percentage obtained in previous qualifying exam."
+        },
+        "feeAmount": {
+          "type": "number",
+          "description": "Admission & tuition fee amount in INR."
+        },
+        "feeStatus": {
+          "type": "string",
+          "description": "Fee payment verification state.",
+          "enum": ["pending", "paid", "waived"],
+          "minLength": 4,
+          "maxLength": 12
+        },
+        "applicationStatus": {
+          "type": "string",
+          "description": "Admission workflow state (enrolled is terminal for non-admins).",
+          "enum": ["submitted", "verified", "enrolled", "rejected"],
+          "minLength": 6,
+          "maxLength": 16
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "UID of applicant or Super Admin creator.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "applicationNo",
+        "applicantName",
+        "applyingForClass",
+        "stream",
+        "guardianName",
+        "contactPhone",
+        "contactEmail",
+        "previousSchool",
+        "percentageLastExam",
+        "feeAmount",
+        "feeStatus",
+        "applicationStatus",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FeeStructureRecord": {
+      "title": "FeeStructureRecord",
+      "description": "Permanent class-wise fee structure directory record detailing academic, hostel, and miscellaneous fees.",
+      "type": "object",
+      "properties": {
+        "className": {
+          "type": "string",
+          "description": "Academic class name (e.g. Class VI, Class X, Class XII Science).",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "academicSession": {
+          "type": "string",
+          "description": "Academic session year (e.g. 2026-27).",
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "stream": {
+          "type": "string",
+          "description": "Academic stream.",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "admissionFee": {
+          "type": "number",
+          "description": "One-time admission registration fee."
+        },
+        "tuitionFeeMonthly": {
+          "type": "number",
+          "description": "Monthly tuition charge."
+        },
+        "tuitionFeeAnnual": {
+          "type": "number",
+          "description": "Annual tuition total."
+        },
+        "hostelBoardingFee": {
+          "type": "number",
+          "description": "Compulsory residency hostel lodging fee."
+        },
+        "messCateringFee": {
+          "type": "number",
+          "description": "Nutritional vegetarian mess fee."
+        },
+        "examAssessmentFee": {
+          "type": "number",
+          "description": "Examinations and test assessment fee."
+        },
+        "computerLabFee": {
+          "type": "number",
+          "description": "Computer and science lab fee."
+        },
+        "libraryResourceFee": {
+          "type": "number",
+          "description": "Library and study resource fee."
+        },
+        "culturalSportsFee": {
+          "type": "number",
+          "description": "Sankariya cultural and sports activity fee."
+        },
+        "developmentFund": {
+          "type": "number",
+          "description": "Trust development and campus maintenance fund."
+        },
+        "medicalEmergencyFee": {
+          "type": "number",
+          "description": "Healthcare and first aid infirmary fee."
+        },
+        "biometricIdFee": {
+          "type": "number",
+          "description": "Smart biometric ID card and school diary fee."
+        },
+        "totalAnnualFee": {
+          "type": "number",
+          "description": "Calculated total annual fee."
+        },
+        "installmentPlan": {
+          "type": "string",
+          "description": "Fee payment schedule (e.g. Quarterly (4 Installments)).",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "quarterlyInstallment": {
+          "type": "number",
+          "description": "Quarterly installment amount."
+        },
+        "concessionPolicy": {
+          "type": "string",
+          "description": "Concession or scholarship policy.",
+          "minLength": 2,
+          "maxLength": 240
+        },
+        "lateFinePerDay": {
+          "type": "number",
+          "description": "Per day late fine charge."
+        },
+        "status": {
+          "type": "string",
+          "description": "Lifecycle status of the fee structure.",
+          "enum": ["active", "draft", "archived"],
+          "minLength": 4,
+          "maxLength": 16
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional administrative guidelines.",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "Super admin owner UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp."
+        }
+      },
+      "required": [
+        "className",
+        "academicSession",
+        "stream",
+        "admissionFee",
+        "tuitionFeeMonthly",
+        "tuitionFeeAnnual",
+        "hostelBoardingFee",
+        "messCateringFee",
+        "examAssessmentFee",
+        "computerLabFee",
+        "libraryResourceFee",
+        "culturalSportsFee",
+        "developmentFund",
+        "medicalEmergencyFee",
+        "biometricIdFee",
+        "totalAnnualFee",
+        "installmentPlan",
+        "quarterlyInstallment",
+        "concessionPolicy",
+        "lateFinePerDay",
+        "status",
+        "ownerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": {
+        "$ref": "#/entities/AdminRecord"
+      },
+      "description": "Super Admin role lookup registry."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "PII-isolated ERP user profiles managed by Super Admin."
+    },
+    "/grades/{gradeId}": {
+      "schema": {
+        "$ref": "#/entities/GradeRecord"
+      },
+      "description": "Automated student gradebook and examination records."
+    },
+    "/skills/{skillId}": {
+      "schema": {
+        "$ref": "#/entities/SkillMilestone"
+      },
+      "description": "Student holistic skill development and milestone records."
+    },
+    "/biometric_logs/{logId}": {
+      "schema": {
+        "$ref": "#/entities/BiometricAttendance"
+      },
+      "description": "Real-time biometric attendance logs for teachers and staff."
+    },
+    "/notifications/{notificationId}": {
+      "schema": {
+        "$ref": "#/entities/NotificationItem"
+      },
+      "description": "Real-time notification broadcasts and alerts."
+    },
+    "/admissions/{admissionId}": {
+      "schema": {
+        "$ref": "#/entities/AdmissionRecord"
+      },
+      "description": "Online admission applications and fee verification records."
+    },
+    "/fee_structures/{feeId}": {
+      "schema": {
+        "$ref": "#/entities/FeeStructureRecord"
+      },
+      "description": "Permanently saved class-wise all types fee structures directory with real-time sync."
+    },
+    "/departments/{deptId}": {
+      "description": "Academic and operational departments registry."
+    },
+    "/hr_staff/{staffId}": {
+      "description": "Human resources staff profiles and employment records."
+    },
+    "/hr_payroll/{payrollId}": {
+      "description": "Monthly payroll generation and payslip vouchers."
+    },
+    "/hr_leaves/{leaveId}": {
+      "description": "Staff leave applications, approval tracking, and attendance."
+    },
+    "/wall_of_fame/{awardId}": {
+      "description": "Wall of fame and honor roll achiever citations and awards."
+    }
+  }
+}

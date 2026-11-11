@@ -1,0 +1,551 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdminEmail() {
+      return isSignedIn() && (
+        request.auth.token.email == 'priyakrdeuri@gmail.com' ||
+        request.auth.token.email == 'niketansankardevshiksha@gmail.com' ||
+        request.auth.uid == 'zEfyx0vxLmN4HX0nK9CKb2KIiKU2'
+      );
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn();
+    }
+
+    function isAdmin() {
+      return isSuperAdminEmail() || exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Validation Blueprints
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll(['uid', 'email', 'grantedBy', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'uid', 'email', 'grantedBy', 'createdAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 120 &&
+        data.grantedBy is string && data.grantedBy.size() >= 1 && data.grantedBy.size() <= 128 && data.grantedBy.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'fullName', 'email', 'phone', 'role', 'departmentOrClass',
+          'rollOrEmpNo', 'guardianOrLinkedName', 'address', 'status',
+          'ownerUid', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'fullName', 'email', 'phone', 'role', 'departmentOrClass',
+          'rollOrEmpNo', 'guardianOrLinkedName', 'address', 'status',
+          'ownerUid', 'createdAt', 'updatedAt'
+        ]) &&
+        data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 120 &&
+        data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 24 &&
+        data.role is string && data.role.size() >= 5 && data.role.size() <= 20 &&
+        (data.role == 'super_admin' || data.role == 'teacher' || data.role == 'student' || data.role == 'parent') &&
+        data.departmentOrClass is string && data.departmentOrClass.size() >= 1 && data.departmentOrClass.size() <= 80 &&
+        data.rollOrEmpNo is string && data.rollOrEmpNo.size() >= 1 && data.rollOrEmpNo.size() <= 40 && data.rollOrEmpNo.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.guardianOrLinkedName is string && data.guardianOrLinkedName.size() >= 1 && data.guardianOrLinkedName.size() <= 100 &&
+        data.address is string && data.address.size() >= 2 && data.address.size() <= 200 &&
+        data.status is string && data.status.size() >= 6 && data.status.size() <= 16 &&
+        (data.status == 'active' || data.status == 'suspended' || data.status == 'archived') &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 && data.ownerUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidGradeRecord(data) {
+      return data.keys().hasAll([
+          'studentId', 'studentName', 'className', 'examTerm', 'subject',
+          'marksObtained', 'maxMarks', 'percentage', 'letterGrade', 'gpa',
+          'division', 'remarks', 'status', 'ownerUid', 'teacherUid',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'studentId', 'studentName', 'className', 'examTerm', 'subject',
+          'marksObtained', 'maxMarks', 'percentage', 'letterGrade', 'gpa',
+          'division', 'remarks', 'status', 'ownerUid', 'teacherUid',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.studentId is string && data.studentId.size() >= 1 && data.studentId.size() <= 64 && data.studentId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.studentName is string && data.studentName.size() >= 2 && data.studentName.size() <= 100 &&
+        data.className is string && data.className.size() >= 2 && data.className.size() <= 60 &&
+        data.examTerm is string && data.examTerm.size() >= 5 && data.examTerm.size() <= 40 &&
+        (data.examTerm == 'Unit Test I' || data.examTerm == 'Half Yearly' || data.examTerm == 'Unit Test II' || data.examTerm == 'Annual Final' || data.examTerm == 'ASSEB Mock Board') &&
+        data.subject is string && data.subject.size() >= 2 && data.subject.size() <= 60 &&
+        data.marksObtained is number && data.marksObtained >= 0 && data.marksObtained <= 1000 &&
+        data.maxMarks is number && data.maxMarks > 0 && data.maxMarks <= 1000 &&
+        data.percentage is number && data.percentage >= 0 && data.percentage <= 100 &&
+        data.letterGrade is string && data.letterGrade.size() >= 1 && data.letterGrade.size() <= 4 &&
+        (data.letterGrade == 'A+' || data.letterGrade == 'A' || data.letterGrade == 'B+' || data.letterGrade == 'B' || data.letterGrade == 'C' || data.letterGrade == 'D' || data.letterGrade == 'F') &&
+        data.gpa is number && data.gpa >= 0 && data.gpa <= 10 &&
+        data.division is string && data.division.size() >= 4 && data.division.size() <= 30 &&
+        (data.division == 'Distinction (Star)' || data.division == 'First Division' || data.division == 'Second Division' || data.division == 'Third Division' || data.division == 'Needs Improvement') &&
+        data.remarks is string && data.remarks.size() >= 1 && data.remarks.size() <= 240 &&
+        data.status is string && data.status.size() >= 9 && data.status.size() <= 12 &&
+        (data.status == 'published' || data.status == 'finalized') &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 && data.ownerUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.teacherUid is string && data.teacherUid.size() >= 1 && data.teacherUid.size() <= 128 && data.teacherUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidSkillMilestone(data) {
+      return data.keys().hasAll([
+          'studentId', 'studentName', 'className', 'skillDomain', 'skillTitle',
+          'proficiency', 'xpPoints', 'milestoneCurrent', 'milestoneTarget',
+          'status', 'endorsementNote', 'ownerUid', 'teacherUid',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'studentId', 'studentName', 'className', 'skillDomain', 'skillTitle',
+          'proficiency', 'xpPoints', 'milestoneCurrent', 'milestoneTarget',
+          'status', 'endorsementNote', 'ownerUid', 'teacherUid',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.studentId is string && data.studentId.size() >= 1 && data.studentId.size() <= 64 && data.studentId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.studentName is string && data.studentName.size() >= 2 && data.studentName.size() <= 100 &&
+        data.className is string && data.className.size() >= 2 && data.className.size() <= 60 &&
+        data.skillDomain is string && data.skillDomain.size() >= 5 && data.skillDomain.size() <= 60 &&
+        (data.skillDomain == 'STEM & Scientific Inquiry' ||
+         data.skillDomain == 'Literary & Communication Arts' ||
+         data.skillDomain == 'APSC / UPSC Competitive Readiness' ||
+         data.skillDomain == 'Digital & Computational Thinking' ||
+         data.skillDomain == 'Sankariya Cultural & Moral Leadership' ||
+         data.skillDomain == 'Sports & Athletic Endurance') &&
+        data.skillTitle is string && data.skillTitle.size() >= 2 && data.skillTitle.size() <= 100 &&
+        data.proficiency is number && data.proficiency >= 0 && data.proficiency <= 100 &&
+        data.xpPoints is number && data.xpPoints >= 0 && data.xpPoints <= 100000 &&
+        data.milestoneCurrent is string && data.milestoneCurrent.size() >= 2 && data.milestoneCurrent.size() <= 120 &&
+        data.milestoneTarget is string && data.milestoneTarget.size() >= 2 && data.milestoneTarget.size() <= 120 &&
+        data.status is string && data.status.size() >= 8 && data.status.size() <= 16 &&
+        (data.status == 'in_progress' || data.status == 'verified' || data.status == 'mastered') &&
+        data.endorsementNote is string && data.endorsementNote.size() >= 2 && data.endorsementNote.size() <= 240 &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 && data.ownerUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.teacherUid is string && data.teacherUid.size() >= 1 && data.teacherUid.size() <= 128 && data.teacherUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidBiometricAttendance(data) {
+      return data.keys().hasAll([
+          'staffId', 'staffName', 'designation', 'department', 'deviceId',
+          'verificationMethod', 'confidenceScore', 'punchType', 'attendanceStatus',
+          'dateStr', 'punchTimeLabel', 'biometricHash', 'ownerUid',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'staffId', 'staffName', 'designation', 'department', 'deviceId',
+          'verificationMethod', 'confidenceScore', 'punchType', 'attendanceStatus',
+          'dateStr', 'punchTimeLabel', 'biometricHash', 'ownerUid',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.staffId is string && data.staffId.size() >= 1 && data.staffId.size() <= 64 && data.staffId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.staffName is string && data.staffName.size() >= 2 && data.staffName.size() <= 100 &&
+        data.designation is string && data.designation.size() >= 2 && data.designation.size() <= 80 &&
+        data.department is string && data.department.size() >= 2 && data.department.size() <= 60 &&
+        data.deviceId is string && data.deviceId.size() >= 3 && data.deviceId.size() <= 40 && data.deviceId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.verificationMethod is string && data.verificationMethod.size() >= 5 && data.verificationMethod.size() <= 30 &&
+        (data.verificationMethod == 'Optical Fingerprint' || data.verificationMethod == 'WebAuthn Passkey' || data.verificationMethod == 'Facial Recognition') &&
+        data.confidenceScore is number && data.confidenceScore >= 50 && data.confidenceScore <= 100 &&
+        data.punchType is string && data.punchType.size() >= 8 && data.punchType.size() <= 12 &&
+        (data.punchType == 'CHECK_IN' || data.punchType == 'CHECK_OUT') &&
+        data.attendanceStatus is string && data.attendanceStatus.size() >= 6 && data.attendanceStatus.size() <= 20 &&
+        (data.attendanceStatus == 'On Time' || data.attendanceStatus == 'Late Arrival' || data.attendanceStatus == 'Checked Out' || data.attendanceStatus == 'Verified') &&
+        data.dateStr is string && data.dateStr.size() >= 8 && data.dateStr.size() <= 16 &&
+        data.punchTimeLabel is string && data.punchTimeLabel.size() >= 4 && data.punchTimeLabel.size() <= 24 &&
+        data.biometricHash is string && data.biometricHash.size() >= 8 && data.biometricHash.size() <= 64 && data.biometricHash.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 && data.ownerUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidNotificationItem(data) {
+      return data.keys().hasAll([
+          'title', 'message', 'category', 'priority', 'targetRole',
+          'senderName', 'isRead', 'ownerUid', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'title', 'message', 'category', 'priority', 'targetRole',
+          'senderName', 'isRead', 'ownerUid', 'createdAt', 'updatedAt'
+        ]) &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 120 &&
+        data.message is string && data.message.size() >= 2 && data.message.size() <= 500 &&
+        data.category is string && data.category.size() >= 4 && data.category.size() <= 24 &&
+        (data.category == 'Academic' || data.category == 'Biometric' || data.category == 'Gradebook' || data.category == 'Admission' || data.category == 'Emergency' || data.category == 'Skill Milestone') &&
+        data.priority is string && data.priority.size() >= 4 && data.priority.size() <= 12 &&
+        (data.priority == 'normal' || data.priority == 'high' || data.priority == 'urgent') &&
+        data.targetRole is string && data.targetRole.size() >= 3 && data.targetRole.size() <= 20 &&
+        (data.targetRole == 'all' || data.targetRole == 'student' || data.targetRole == 'parent' || data.targetRole == 'teacher' || data.targetRole == 'super_admin') &&
+        data.senderName is string && data.senderName.size() >= 2 && data.senderName.size() <= 80 &&
+        data.isRead is bool &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 && data.ownerUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAdmissionRecord(data) {
+      return data.keys().hasAll([
+          'applicationNo', 'applicantName', 'applyingForClass', 'stream',
+          'guardianName', 'contactPhone', 'contactEmail', 'previousSchool',
+          'percentageLastExam', 'feeAmount', 'feeStatus', 'applicationStatus',
+          'ownerUid', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'applicationNo', 'applicantName', 'applyingForClass', 'stream',
+          'guardianName', 'contactPhone', 'contactEmail', 'previousSchool',
+          'percentageLastExam', 'feeAmount', 'feeStatus', 'applicationStatus',
+          'ownerUid', 'createdAt', 'updatedAt',
+          'email', 'address', 'studentPhoto', 'photoType', 'firstName', 'lastName',
+          'gender', 'dob', 'mobileNumber', 'caste', 'religion', 'bloodGroup',
+          'hostelRequired', 'fatherName', 'guardianIs', 'guardianRelation',
+          'guardianPhone', 'guardianEmail', 'guardianOccupation', 'guardianAddress',
+          'permanentAddress', 'bankAccountNo', 'bankAccountHolder', 'bankName',
+          'ifscCode', 'portalUsername', 'hostelBlock', 'roomNumber', 'messPreference'
+        ]) &&
+        data.applicationNo is string && data.applicationNo.size() >= 4 && data.applicationNo.size() <= 32 && data.applicationNo.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.applicantName is string && data.applicantName.size() >= 2 && data.applicantName.size() <= 100 &&
+        data.applyingForClass is string && data.applyingForClass.size() >= 2 && data.applyingForClass.size() <= 60 &&
+        data.stream is string && data.stream.size() >= 2 && data.stream.size() <= 40 &&
+        data.guardianName is string && data.guardianName.size() >= 2 && data.guardianName.size() <= 100 &&
+        data.contactPhone is string && data.contactPhone.size() >= 5 && data.contactPhone.size() <= 24 &&
+        data.contactEmail is string && data.contactEmail.size() >= 3 && data.contactEmail.size() <= 120 &&
+        data.previousSchool is string && data.previousSchool.size() >= 2 && data.previousSchool.size() <= 120 &&
+        data.percentageLastExam is number && data.percentageLastExam >= 0 && data.percentageLastExam <= 100 &&
+        data.feeAmount is number && data.feeAmount >= 0 && data.feeAmount <= 1000000 &&
+        data.feeStatus is string && data.feeStatus.size() >= 4 && data.feeStatus.size() <= 12 &&
+        (data.feeStatus == 'pending' || data.feeStatus == 'paid' || data.feeStatus == 'waived') &&
+        data.applicationStatus is string && data.applicationStatus.size() >= 6 && data.applicationStatus.size() <= 16 &&
+        (data.applicationStatus == 'submitted' || data.applicationStatus == 'verified' || data.applicationStatus == 'enrolled' || data.applicationStatus == 'rejected') &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 && data.ownerUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidFeeStructure(data) {
+      return data.keys().hasAll([
+          'className', 'academicSession', 'stream', 'admissionFee',
+          'tuitionFeeMonthly', 'tuitionFeeAnnual', 'hostelBoardingFee',
+          'messCateringFee', 'examAssessmentFee', 'computerLabFee',
+          'libraryResourceFee', 'culturalSportsFee', 'developmentFund',
+          'medicalEmergencyFee', 'biometricIdFee', 'totalAnnualFee',
+          'installmentPlan', 'quarterlyInstallment', 'concessionPolicy',
+          'lateFinePerDay', 'status', 'ownerUid', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'className', 'academicSession', 'stream', 'admissionFee',
+          'tuitionFeeMonthly', 'tuitionFeeAnnual', 'hostelBoardingFee',
+          'messCateringFee', 'examAssessmentFee', 'computerLabFee',
+          'libraryResourceFee', 'culturalSportsFee', 'developmentFund',
+          'medicalEmergencyFee', 'biometricIdFee', 'totalAnnualFee',
+          'installmentPlan', 'quarterlyInstallment', 'concessionPolicy',
+          'lateFinePerDay', 'status', 'notes', 'ownerUid', 'createdAt', 'updatedAt'
+        ]) &&
+        data.className is string && data.className.size() >= 2 && data.className.size() <= 60 &&
+        data.academicSession is string && data.academicSession.size() >= 4 && data.academicSession.size() <= 20 &&
+        data.stream is string && data.stream.size() >= 2 && data.stream.size() <= 40 &&
+        data.admissionFee is number && data.admissionFee >= 0 && data.admissionFee <= 200000 &&
+        data.tuitionFeeMonthly is number && data.tuitionFeeMonthly >= 0 && data.tuitionFeeMonthly <= 50000 &&
+        data.tuitionFeeAnnual is number && data.tuitionFeeAnnual >= 0 && data.tuitionFeeAnnual <= 600000 &&
+        data.hostelBoardingFee is number && data.hostelBoardingFee >= 0 && data.hostelBoardingFee <= 600000 &&
+        data.messCateringFee is number && data.messCateringFee >= 0 && data.messCateringFee <= 600000 &&
+        data.examAssessmentFee is number && data.examAssessmentFee >= 0 && data.examAssessmentFee <= 100000 &&
+        data.computerLabFee is number && data.computerLabFee >= 0 && data.computerLabFee <= 100000 &&
+        data.libraryResourceFee is number && data.libraryResourceFee >= 0 && data.libraryResourceFee <= 100000 &&
+        data.culturalSportsFee is number && data.culturalSportsFee >= 0 && data.culturalSportsFee <= 100000 &&
+        data.developmentFund is number && data.developmentFund >= 0 && data.developmentFund <= 100000 &&
+        data.medicalEmergencyFee is number && data.medicalEmergencyFee >= 0 && data.medicalEmergencyFee <= 100000 &&
+        data.biometricIdFee is number && data.biometricIdFee >= 0 && data.biometricIdFee <= 50000 &&
+        data.totalAnnualFee is number && data.totalAnnualFee >= 0 && data.totalAnnualFee <= 2000000 &&
+        data.installmentPlan is string && data.installmentPlan.size() >= 2 && data.installmentPlan.size() <= 60 &&
+        data.quarterlyInstallment is number && data.quarterlyInstallment >= 0 && data.quarterlyInstallment <= 500000 &&
+        data.concessionPolicy is string && data.concessionPolicy.size() >= 2 && data.concessionPolicy.size() <= 240 &&
+        data.lateFinePerDay is number && data.lateFinePerDay >= 0 && data.lateFinePerDay <= 5000 &&
+        data.status is string && data.status.size() >= 4 && data.status.size() <= 16 &&
+        (data.status == 'active' || data.status == 'draft' || data.status == 'archived') &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 300)) &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 && data.ownerUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // 1. /admins/{adminId}
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && (adminId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (isSuperAdminEmail() || existing().uid == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(adminId) && isValidAdminRecord(incoming()) &&
+        incoming().uid == adminId &&
+        incoming().grantedBy == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        isAdmin();
+      allow update: if isVerifiedUser() && isValidId(adminId) && isValidAdminRecord(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        isAdmin();
+      allow delete: if isVerifiedUser() && isValidId(adminId) && isAdmin();
+    }
+
+    // 2. /users/{userId} (PII Isolated to Owner or Super Admin)
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (existing().ownerUid == request.auth.uid || userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (isSuperAdminEmail() || existing().ownerUid == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(userId) && isValidUserProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          (incoming().ownerUid == request.auth.uid && userId == request.auth.uid && incoming().role != 'super_admin' && incoming().status == 'active')
+        );
+      allow update: if isVerifiedUser() && isValidId(userId) && isValidUserProfile(incoming()) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().ownerUid == existing().ownerUid &&
+        incoming().updatedAt == request.time &&
+        (existing().status != 'archived' || isAdmin()) &&
+        (
+          isAdmin() ||
+          (
+            existing().ownerUid == request.auth.uid &&
+            incoming().role == existing().role &&
+            incoming().status == existing().status &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'phone', 'address', 'guardianOrLinkedName', 'updatedAt'])
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(userId) && isAdmin();
+    }
+
+    // 3. /grades/{gradeId}
+    match /grades/{gradeId} {
+      allow get: if isSignedIn() && isValidId(gradeId) && (existing().ownerUid == request.auth.uid || existing().teacherUid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (isSuperAdminEmail() || existing().ownerUid == request.auth.uid || existing().teacherUid == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(gradeId) && isValidGradeRecord(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (incoming().ownerUid == request.auth.uid || incoming().teacherUid == request.auth.uid || isAdmin());
+      allow update: if isVerifiedUser() && isValidId(gradeId) && isValidGradeRecord(incoming()) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().ownerUid == existing().ownerUid &&
+        incoming().updatedAt == request.time &&
+        (existing().status != 'finalized' || isAdmin()) &&
+        (
+          isAdmin() ||
+          (
+            existing().teacherUid == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'marksObtained', 'maxMarks', 'percentage', 'letterGrade', 'gpa', 'division', 'remarks', 'status', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(gradeId) && (existing().teacherUid == request.auth.uid || isAdmin());
+    }
+
+    // 4. /skills/{skillId}
+    match /skills/{skillId} {
+      allow get: if isSignedIn() && isValidId(skillId) && (existing().ownerUid == request.auth.uid || existing().teacherUid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (isSuperAdminEmail() || existing().ownerUid == request.auth.uid || existing().teacherUid == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(skillId) && isValidSkillMilestone(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (incoming().ownerUid == request.auth.uid || incoming().teacherUid == request.auth.uid || isAdmin());
+      allow update: if isVerifiedUser() && isValidId(skillId) && isValidSkillMilestone(incoming()) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().ownerUid == existing().ownerUid &&
+        incoming().updatedAt == request.time &&
+        (existing().status != 'mastered' || isAdmin()) &&
+        (
+          isAdmin() ||
+          (
+            existing().teacherUid == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'proficiency', 'xpPoints', 'milestoneCurrent', 'milestoneTarget', 'status', 'endorsementNote', 'updatedAt'
+            ])
+          ) ||
+          (
+            existing().ownerUid == request.auth.uid &&
+            incoming().status == existing().status &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'proficiency', 'xpPoints', 'milestoneCurrent', 'milestoneTarget', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(skillId) && (existing().teacherUid == request.auth.uid || isAdmin());
+    }
+
+    // 5. /biometric_logs/{logId}
+    match /biometric_logs/{logId} {
+      allow get: if isSignedIn() && isValidId(logId) && (existing().ownerUid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (isSuperAdminEmail() || existing().ownerUid == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(logId) && isValidBiometricAttendance(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (incoming().ownerUid == request.auth.uid || isAdmin());
+      allow update: if isVerifiedUser() && isValidId(logId) && isValidBiometricAttendance(incoming()) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().ownerUid == existing().ownerUid &&
+        incoming().biometricHash == existing().biometricHash &&
+        incoming().updatedAt == request.time &&
+        (existing().attendanceStatus != 'Checked Out' || isAdmin()) &&
+        (
+          isAdmin() ||
+          (
+            existing().ownerUid == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['punchType', 'attendanceStatus', 'punchTimeLabel', 'updatedAt'])
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(logId) && isAdmin();
+    }
+
+    // 6. /notifications/{notificationId}
+    match /notifications/{notificationId} {
+      allow get: if isSignedIn() && isValidId(notificationId) && (existing().ownerUid == request.auth.uid || existing().targetRole == 'all' || isAdmin());
+      allow list: if isSignedIn() && (isSuperAdminEmail() || existing().ownerUid == request.auth.uid || existing().targetRole == 'all');
+      allow create: if isVerifiedUser() && isValidId(notificationId) && isValidNotificationItem(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (incoming().ownerUid == request.auth.uid || isAdmin());
+      allow update: if isVerifiedUser() && isValidId(notificationId) && isValidNotificationItem(incoming()) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().ownerUid == existing().ownerUid &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          (
+            (existing().ownerUid == request.auth.uid || existing().targetRole == 'all') &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['isRead', 'updatedAt'])
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(notificationId) && (existing().ownerUid == request.auth.uid || isAdmin());
+    }
+
+    // 7. /admissions/{admissionId}
+    match /admissions/{admissionId} {
+      allow get: if isSignedIn() && isValidId(admissionId) && (existing().ownerUid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (isSuperAdminEmail() || existing().ownerUid == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(admissionId) && isValidAdmissionRecord(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          (incoming().ownerUid == request.auth.uid && incoming().applicationStatus == 'submitted' && incoming().feeStatus == 'pending')
+        );
+      allow update: if isVerifiedUser() && isValidId(admissionId) && isValidAdmissionRecord(incoming()) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().ownerUid == existing().ownerUid &&
+        incoming().applicationNo == existing().applicationNo &&
+        incoming().updatedAt == request.time &&
+        (existing().applicationStatus != 'enrolled' && existing().applicationStatus != 'rejected' || isAdmin()) &&
+        (
+          isAdmin() ||
+          (
+            existing().ownerUid == request.auth.uid &&
+            existing().applicationStatus == 'submitted' &&
+            incoming().applicationStatus == 'submitted' &&
+            incoming().feeStatus == existing().feeStatus &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['contactPhone', 'contactEmail', 'previousSchool', 'updatedAt'])
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(admissionId) && isAdmin();
+    }
+
+    // 8. /fee_structures/{feeId}
+    match /fee_structures/{feeId} {
+      allow get, list: if true;
+      allow create: if isVerifiedUser() && isValidId(feeId) && isValidFeeStructure(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+      allow update: if isVerifiedUser() && isValidId(feeId) && isValidFeeStructure(incoming()) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+      allow delete: if isVerifiedUser() && isValidId(feeId) && isAdmin();
+    }
+
+    // 9. /departments/{deptId}
+    match /departments/{deptId} {
+      allow get, list: if true;
+      allow create: if isVerifiedUser() && isValidId(deptId) && isAdmin();
+      allow update: if isVerifiedUser() && isValidId(deptId) && isAdmin();
+      allow delete: if isVerifiedUser() && isValidId(deptId) && isAdmin();
+    }
+
+    // 10. /hr_staff/{staffId}
+    match /hr_staff/{staffId} {
+      allow get: if isSignedIn() && isValidId(staffId);
+      allow list: if isSignedIn();
+      allow create: if isVerifiedUser() && isValidId(staffId) && isAdmin();
+      allow update: if isVerifiedUser() && isValidId(staffId) && isAdmin();
+      allow delete: if isVerifiedUser() && isValidId(staffId) && isAdmin();
+    }
+
+    // 11. /hr_payroll/{payrollId}
+    match /hr_payroll/{payrollId} {
+      allow get: if isSignedIn() && isValidId(payrollId);
+      allow list: if isSignedIn();
+      allow create: if isVerifiedUser() && isValidId(payrollId) && isAdmin();
+      allow update: if isVerifiedUser() && isValidId(payrollId) && isAdmin();
+      allow delete: if isVerifiedUser() && isValidId(payrollId) && isAdmin();
+    }
+
+    // 12. /hr_leaves/{leaveId}
+    match /hr_leaves/{leaveId} {
+      allow get: if isSignedIn() && isValidId(leaveId);
+      allow list: if isSignedIn();
+      allow create: if isVerifiedUser() && isValidId(leaveId);
+      allow update: if isVerifiedUser() && isValidId(leaveId);
+      allow delete: if isVerifiedUser() && isValidId(leaveId) && isAdmin();
+    }
+
+    // 13. /wall_of_fame/{awardId}
+    match /wall_of_fame/{awardId} {
+      allow get, list: if true;
+      allow create: if isVerifiedUser() && isValidId(awardId) && isAdmin();
+      allow update: if isVerifiedUser() && isValidId(awardId) && isAdmin();
+      allow delete: if isVerifiedUser() && isValidId(awardId) && isAdmin();
+    }
+
+    // 14. /school_settings/{settingId}
+    match /school_settings/{settingId} {
+      allow get, list: if true;
+      allow create, update, delete: if isVerifiedUser() && isValidId(settingId) && isAdmin();
+    }
+
+    // 15. /student_certificates/{certId}
+    match /student_certificates/{certId} {
+      allow get: if isSignedIn() && isValidId(certId);
+      allow list: if isSignedIn();
+      allow create, update, delete: if isVerifiedUser() && isValidId(certId) && isAdmin();
+    }
+
+    // 16. /fee_payments/{paymentId}
+    match /fee_payments/{paymentId} {
+      allow get: if isSignedIn() && isValidId(paymentId);
+      allow list: if isSignedIn();
+      allow create, update, delete: if isVerifiedUser() && isValidId(paymentId) && isAdmin();
+    }
+  }
+}
+
